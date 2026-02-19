@@ -17,10 +17,20 @@ import os
 from datetime import datetime
 
 # ── Optional deps ──────────────────────────
+import sys as _sys_module
 try:
     import pystray
-    from PIL import Image, ImageDraw, ImageFont
-    TRAY_OK = True
+    from PIL import Image, ImageDraw
+    # Sur macOS, pystray nécessite d'être sur le thread principal
+    # On le désactive si on est sur macOS et que rumps n'est pas dispo
+    if platform.system() == "Darwin":
+        try:
+            import rumps  # noqa – vérifie juste la présence
+            TRAY_OK = True
+        except ImportError:
+            TRAY_OK = False  # pip install rumps pour activer
+    else:
+        TRAY_OK = True
 except ImportError:
     TRAY_OK = False
 
@@ -93,19 +103,33 @@ def _fetch_temps_thread():
     global _temp_cache
     while True:
         result = {}
-        try:
-            # Linux / macOS — psutil natif
-            sensors = psutil.sensors_temperatures()
-            if sensors:
-                for chip, entries in sensors.items():
-                    for e in entries[:2]:
-                        lbl = (e.label or chip)[:20]
-                        result[lbl] = round(e.current, 1)
-        except AttributeError:
-            pass
+        _sys = platform.system()
+
+        # Linux — psutil natif
+        if _sys == "Linux":
+            try:
+                sensors = psutil.sensors_temperatures()
+                if sensors:
+                    for chip, entries in sensors.items():
+                        for e in entries[:2]:
+                            lbl = (e.label or chip)[:20]
+                            result[lbl] = round(e.current, 1)
+            except Exception:
+                pass
+
+        # macOS — osx-cpu-temp si installé, sinon N/A
+        elif _sys == "Darwin":
+            try:
+                import subprocess
+                out = subprocess.check_output(
+                    ["osx-cpu-temp"], stderr=subprocess.DEVNULL).decode().strip()
+                val = float(out.replace("°C", "").replace(",", ".").strip())
+                result["CPU"] = round(val, 1)
+            except Exception:
+                pass
 
         # Windows — WMI thermal zones
-        if platform.system() == "Windows" and not result:
+        elif _sys == "Windows":
             try:
                 import wmi
                 w = wmi.WMI(namespace="root\\wmi")
@@ -590,9 +614,14 @@ class WGMonitor(ctk.CTk):
         self._uptime_lbl.pack(side="left", padx=16, pady=6)
 
         # Tray status
-        tray_txt = "● Tray actif" if TRAY_OK else "⚠ pip install pystray pillow"
+        if TRAY_OK:
+            tray_txt, tray_col = "● Tray actif", T["green"]
+        elif platform.system() == "Darwin":
+            tray_txt, tray_col = "⚠ pip install pystray pillow rumps", T["orange"]
+        else:
+            tray_txt, tray_col = "⚠ pip install pystray pillow", T["orange"]
         ctk.CTkLabel(bot, text=tray_txt, font=("Consolas", 9),
-                      text_color=T["green"] if TRAY_OK else T["orange"]).pack(side="right", padx=16)
+                      text_color=tray_col).pack(side="right", padx=16)
 
         # CONTENT
         self._content = ctk.CTkFrame(self, fg_color="transparent")
@@ -1102,28 +1131,55 @@ class WGMonitor(ctk.CTk):
 
     @staticmethod
     def _short_cpu():
+        import subprocess
+        _sys = platform.system()
         try:
-            if platform.system() == "Windows":
-                import subprocess
+            if _sys == "Windows":
                 out = subprocess.check_output(
                     ["powershell", "-NoProfile", "-Command",
                      "(Get-CimInstance Win32_Processor).Name"],
                     shell=False, stderr=subprocess.DEVNULL).decode().strip()
                 return out[:52] if out else platform.processor()[:52]
+            elif _sys == "Darwin":
+                out = subprocess.check_output(
+                    ["sysctl", "-n", "machdep.cpu.brand_string"],
+                    stderr=subprocess.DEVNULL).decode().strip()
+                return out[:52] if out else platform.processor()[:52]
+            else:
+                with open("/proc/cpuinfo") as f:
+                    for line in f:
+                        if "model name" in line:
+                            return line.split(":")[1].strip()[:52]
         except Exception:
             pass
         return platform.processor()[:52] or "Unknown CPU"
 
     @staticmethod
     def _get_gpu():
+        import subprocess
+        _sys = platform.system()
         try:
-            if platform.system() == "Windows":
-                import subprocess
+            if _sys == "Windows":
                 out = subprocess.check_output(
                     ["powershell", "-NoProfile", "-Command",
                      "(Get-CimInstance Win32_VideoController | Where-Object {$_.Name -notlike '*Basic*' -and $_.Name -notlike '*Remote*'} | Select-Object -First 1).Name"],
                     shell=False, stderr=subprocess.DEVNULL).decode().strip()
                 return out[:40] if out else "Unknown GPU"
+            elif _sys == "Darwin":
+                out = subprocess.check_output(
+                    ["system_profiler", "SPDisplaysDataType"],
+                    stderr=subprocess.DEVNULL).decode()
+                for line in out.splitlines():
+                    line = line.strip()
+                    if "Chipset Model" in line or "Graphics" in line:
+                        return line.split(":")[-1].strip()[:40]
+            else:
+                # Linux : lspci
+                out = subprocess.check_output(
+                    ["lspci"], stderr=subprocess.DEVNULL).decode()
+                for line in out.splitlines():
+                    if "VGA" in line or "3D" in line:
+                        return line.split(":")[-1].strip()[:40]
         except Exception:
             pass
         return "Unknown GPU"
@@ -1131,8 +1187,9 @@ class WGMonitor(ctk.CTk):
     @staticmethod
     def _get_sysinfo():
         uname   = platform.uname()
-        os_name = uname.system + " " + uname.release
-        if uname.system == "Windows":
+        _sys = uname.system
+        os_name = _sys + " " + uname.release
+        if _sys == "Windows":
             try:
                 import winreg
                 key     = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
@@ -1145,6 +1202,19 @@ class WGMonitor(ctk.CTk):
                 os_name = edition
             except Exception:
                 pass
+        elif _sys == "Darwin":
+            try:
+                import subprocess
+                ver = subprocess.check_output(
+                    ["sw_vers", "-productVersion"],
+                    stderr=subprocess.DEVNULL).decode().strip()
+                name = subprocess.check_output(
+                    ["sw_vers", "-productName"],
+                    stderr=subprocess.DEVNULL).decode().strip()
+                os_name = f"{name} {ver}"
+            except Exception:
+                mac_ver = platform.mac_ver()[0]
+                os_name = f"macOS {mac_ver}" if mac_ver else os_name
         cpu_brand = "Unknown CPU"
         try:
             if platform.system() == "Windows":
