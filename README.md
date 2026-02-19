@@ -13,22 +13,11 @@
 
 | 🌙 Dark | ☀️ Light |
 |--------|---------|
-<<<<<<< HEAD
 | <img width="1102" height="812" alt="Dark" src="https://github.com/user-attachments/assets/b8b71ff4-2a9d-4acd-83dc-94d2899d1f6a" /> | <img width="1102" height="812" alt="Light" src="https://github.com/user-attachments/assets/f634c4e9-fc87-4429-bbca-324cb96988b8" /> |
 
 | 🌊 Midnight | 🔥 Red |
 |------------|-------|
 | <img width="1102" height="812" alt="Midnight" src="https://github.com/user-attachments/assets/3ffe086c-2686-4df9-aaca-7dc270aba976" /> | <img width="1102" height="812" alt="Red" src="https://github.com/user-attachments/assets/5fff8e3e-86dd-4832-bade-acd7bf6a2b34" /> |
-=======
-| <img width="1102" height="812" alt="image" src="https://github.com/user-attachments/assets/b8b71ff4-2a9d-4acd-83dc-94d2899d1f6a" />
-| <img width="1102" height="812" alt="image" src="https://github.com/user-attachments/assets/f634c4e9-fc87-4429-bbca-324cb96988b8" />|
-
-| 🌊 Midnight | 🔥 Red |
-|------------|-------|
-| <img width="1102" height="812" alt="image" src="https://github.com/user-attachments/assets/3ffe086c-2686-4df9-aaca-7dc270aba976" />
- | <img width="1102" height="812" alt="image" src="https://github.com/user-attachments/assets/5fff8e3e-86dd-4832-bade-acd7bf6a2b34" />
- |
->>>>>>> c35c3a9e638d574c979eeb2b7582845aa651846e
 
 ---
 
