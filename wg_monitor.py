@@ -281,6 +281,90 @@ class WGMonitor(ctk.CTk):
         self._build_ui()
         self._refresh()
 
+    def _copy_config(self):
+        """Génère un résumé système et le copie dans le presse-papier."""
+        try:
+            uname   = platform.uname()
+            cpu     = self._short_cpu()
+            mem     = psutil.virtual_memory()
+            swap    = psutil.swap_memory()
+            freq    = psutil.cpu_freq()
+            cores_p = psutil.cpu_count(logical=False)
+            cores_l = psutil.cpu_count(logical=True)
+
+            # OS avec détection Win11
+            os_name = uname.system + " " + uname.release
+            if uname.system == "Windows":
+                try:
+                    import winreg
+                    key   = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                                           r"SOFTWARE\Microsoft\Windows NT\CurrentVersion")
+                    build = int(winreg.QueryValueEx(key, "CurrentBuildNumber")[0])
+                    ed    = winreg.QueryValueEx(key, "ProductName")[0]
+                    winreg.CloseKey(key)
+                    if build >= 22000:
+                        ed = ed.replace("Windows 10", "Windows 11")
+                    os_name = f"{ed} (build {build})"
+                except Exception:
+                    pass
+
+            # Disques
+            disk_lines = []
+            for p in psutil.disk_partitions()[:4]:
+                try:
+                    u      = psutil.disk_usage(p.mountpoint)
+                    letter = p.device.strip().rstrip("\\").rstrip("/").rstrip(":").upper()
+                    letter = (letter[-1] if letter else "?") + ":"
+                    disk_lines.append(
+                        f"  {letter}  {self._fmt(u.used)} / {self._fmt(u.total)} "
+                        f"({u.percent:.1f}%)"
+                    )
+                except Exception:
+                    pass
+
+            # Réseau
+            net = psutil.net_io_counters()
+
+            lines = [
+                "╔══════════════════════════════════════╗",
+                "║           WG Monitor — Config         ║",
+                "╚══════════════════════════════════════╝",
+                "",
+                f"🖥  OS       : {os_name}",
+                f"⚙️  CPU      : {cpu}",
+                f"   Cores    : {cores_p} physiques / {cores_l} logiques",
+            ]
+            if freq:
+                lines.append(f"   Fréq.    : {freq.current:.0f} MHz (max {freq.max:.0f} MHz)")
+            lines += [
+                "",
+                f"🧠  RAM      : {self._fmt(mem.total)} total — {self._fmt(mem.used)} utilisé ({mem.percent:.1f}%)",
+                f"   SWAP     : {self._fmt(swap.total)} total — {self._fmt(swap.used)} utilisé ({swap.percent:.1f}%)",
+                "",
+                "💾  Disques  :",
+                *disk_lines,
+                "",
+                f"📡  Réseau   : ▼ {self._fmt(net.bytes_recv)} reçus — ▲ {self._fmt(net.bytes_sent)} envoyés",
+                "",
+                f"🐍  Python   : {platform.python_version()}",
+                f"📅  Date     : {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+            ]
+
+            text = "\n".join(lines)
+            self.clipboard_clear()
+            self.clipboard_append(text)
+
+            # Feedback visuel
+            self._copy_btn.configure(text="✅  Copié !", text_color=T["green"])
+            self.after(2000, lambda: self._copy_btn.configure(
+                text="📋  Copier config", text_color=T["text_sec"]))
+
+        except Exception as e:
+            self._copy_btn.configure(text="❌  Erreur", text_color=T["red"])
+            self.after(2000, lambda: self._copy_btn.configure(
+                text="📋  Copier config", text_color=T["text_sec"]))
+            print(f"[copy_config] {e}")
+
     def _open_theme_popup(self):
         ThemePopup(self, self._current_theme, self._apply_theme)
 
@@ -308,7 +392,21 @@ class WGMonitor(ctk.CTk):
             height=32,
             width=140,
             command=self._open_theme_popup,
-        ).pack(side="right", padx=16, pady=10)
+        ).pack(side="right", padx=(6, 16), pady=10)
+
+        self._copy_btn = ctk.CTkButton(
+            topbar,
+            text="📋  Copier config",
+            font=("Consolas", 11),
+            fg_color=T["bg_card2"],
+            hover_color=T["bg_border"],
+            text_color=T["text_sec"],
+            corner_radius=8,
+            height=32,
+            width=150,
+            command=self._copy_config,
+        )
+        self._copy_btn.pack(side="right", padx=(0, 4), pady=10)
 
         ctk.CTkLabel(topbar, text="● LIVE",
                      font=("Consolas", 10, "bold"),
