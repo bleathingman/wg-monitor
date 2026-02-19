@@ -216,7 +216,7 @@ class ThemePopup(ctk.CTkToplevel):
         self.geometry(f"175x{popup_h}+{x}+{y}")
 
         ctk.CTkLabel(self, text="CHOISIR UN THÈME",
-                     font=("Consolas", 9, "bold"),
+                     font=("Consolas", 12, "bold"),
                      text_color=T["text_mut"]).pack(pady=(10, 4))
 
         for name in THEME_NAMES:
@@ -337,6 +337,7 @@ class WGMonitor(ctk.CTk):
             if freq:
                 lines.append(f"   Fréq.    : {freq.current:.0f} MHz (max {freq.max:.0f} MHz)")
             lines += [
+                f"🎮  GPU      : {self._get_gpu()}",
                 "",
                 f"🧠  RAM      : {self._fmt(mem.total)} total — {self._fmt(mem.used)} utilisé ({mem.percent:.1f}%)",
                 f"   SWAP     : {self._fmt(swap.total)} total — {self._fmt(swap.used)} utilisé ({swap.percent:.1f}%)",
@@ -409,7 +410,7 @@ class WGMonitor(ctk.CTk):
         self._copy_btn.pack(side="right", padx=(0, 4), pady=10)
 
         ctk.CTkLabel(topbar, text="● LIVE",
-                     font=("Consolas", 10, "bold"),
+                     font=("Consolas", 13, "bold"),
                      text_color=T["green"]).pack(side="right", padx=(0, 6))
 
         self._clock = ctk.CTkLabel(topbar, text="",
@@ -425,11 +426,11 @@ class WGMonitor(ctk.CTk):
         bot.pack(fill="x", side="bottom")
         bot.pack_propagate(False)
         self._uptime_lbl = ctk.CTkLabel(bot, text="",
-                                         font=("Consolas", 9),
+                                         font=("Consolas", 12),
                                          text_color=T["text_sec"])
         self._uptime_lbl.pack(side="left", padx=16, pady=6)
         ctk.CTkLabel(bot, text="WG Monitor v1.0  •  Python + customtkinter",
-                      font=("Consolas", 9),
+                      font=("Consolas", 12),
                       text_color=T["text_mut"]).pack(side="right", padx=16)
 
         # BODY
@@ -458,7 +459,7 @@ class WGMonitor(ctk.CTk):
         self._cpu_big.pack(anchor="w")
 
         ctk.CTkLabel(cpu_body, text=self._short_cpu(),
-                     font=("Consolas", 9), text_color=T["text_mut"],
+                     font=("Consolas", 12), text_color=T["text_mut"],
                      wraplength=300, justify="left").pack(anchor="w", pady=(0, 8))
 
         cores = psutil.cpu_count(logical=True)
@@ -474,7 +475,7 @@ class WGMonitor(ctk.CTk):
             self._core_bars.append(bar)
 
         self._cpu_freq = ctk.CTkLabel(cpu_body, text="",
-                                       font=("Consolas", 9),
+                                       font=("Consolas", 12),
                                        text_color=T["text_mut"])
         self._cpu_freq.pack(anchor="w", pady=(8, 0))
 
@@ -489,7 +490,7 @@ class WGMonitor(ctk.CTk):
         self._ram_big.pack(anchor="w")
 
         self._ram_detail = ctk.CTkLabel(ram_body, text="",
-                                         font=("Consolas", 9),
+                                         font=("Consolas", 12),
                                          text_color=T["text_mut"])
         self._ram_detail.pack(anchor="w", pady=(0, 8))
 
@@ -508,7 +509,7 @@ class WGMonitor(ctk.CTk):
             lbl = ctk.CTkLabel(fr, text="—", font=("Consolas", 13, "bold"),
                                 text_color=T["text_pri"])
             lbl.pack()
-            ctk.CTkLabel(fr, text=key, font=("Consolas", 8),
+            ctk.CTkLabel(fr, text=key, font=("Consolas", 11),
                           text_color=T["text_mut"]).pack()
             self._mem_stats[key] = lbl
 
@@ -543,7 +544,7 @@ class WGMonitor(ctk.CTk):
                 pass
 
         self._disk_rw = ctk.CTkLabel(disk_body, text="R: — W: —",
-                                      font=("Consolas", 10),
+                                      font=("Consolas", 13),
                                       text_color=T["text_sec"])
         self._disk_rw.pack(anchor="w", pady=(8, 0))
 
@@ -559,7 +560,7 @@ class WGMonitor(ctk.CTk):
 
         down_f = ctk.CTkFrame(net_vals, fg_color="transparent")
         down_f.grid(row=0, column=0, sticky="w")
-        ctk.CTkLabel(down_f, text="▼ DOWN", font=("Consolas", 8),
+        ctk.CTkLabel(down_f, text="▼ DOWN", font=("Consolas", 11),
                       text_color=T["blue"]).pack(anchor="w")
         self._net_down_lbl = ctk.CTkLabel(down_f, text="0 B/s",
                                            font=("Consolas", 18, "bold"),
@@ -568,7 +569,7 @@ class WGMonitor(ctk.CTk):
 
         up_f = ctk.CTkFrame(net_vals, fg_color="transparent")
         up_f.grid(row=0, column=1, sticky="w")
-        ctk.CTkLabel(up_f, text="▲ UP", font=("Consolas", 8),
+        ctk.CTkLabel(up_f, text="▲ UP", font=("Consolas", 11),
                       text_color=T["accent"]).pack(anchor="w")
         self._net_up_lbl = ctk.CTkLabel(up_f, text="0 B/s",
                                          font=("Consolas", 18, "bold"),
@@ -585,7 +586,7 @@ class WGMonitor(ctk.CTk):
         self._graph_up.place(relx=0.5, rely=0, relwidth=0.5, relheight=1)
 
         self._net_totals = ctk.CTkLabel(net_body, text="",
-                                         font=("Consolas", 10),
+                                         font=("Consolas", 13),
                                          text_color=T["text_sec"])
         self._net_totals.pack(anchor="w", pady=(6, 0))
 
@@ -597,16 +598,16 @@ class WGMonitor(ctk.CTk):
         info_grid = ctk.CTkFrame(info_body, fg_color="transparent")
         info_grid.pack(fill="x")
         info = self._get_sysinfo()
-        accent_cols = [T["accent"], T["blue"], T["green"], T["orange"]]
+        accent_cols = [T["accent"], T["blue"], T["green"], T["orange"], T["text_sec"]]
         for i, (k, v) in enumerate(info.items()):
             info_grid.columnconfigure(i, weight=1)
             fr = ctk.CTkFrame(info_grid, fg_color=T["bg_card2"], corner_radius=8)
             fr.grid(row=0, column=i, padx=3, pady=4, sticky="nsew")
-            ctk.CTkLabel(fr, text=k, font=("Consolas", 9),
+            ctk.CTkLabel(fr, text=k, font=("Consolas", 12),
                           text_color=T["text_sec"]).pack(pady=(8, 2))
-            ctk.CTkLabel(fr, text=v, font=("Consolas", 11, "bold"),
+            ctk.CTkLabel(fr, text=v, font=("Consolas", 13, "bold"),
                           text_color=accent_cols[i],
-                          wraplength=160, justify="center").pack(pady=(0, 8), padx=6)
+                          wraplength=180, justify="center").pack(pady=(0, 8), padx=6)
 
     # ── REFRESH ───────────────────────────────
     def _refresh(self):
@@ -717,8 +718,26 @@ class WGMonitor(ctk.CTk):
         return platform.processor()[:52] or "Unknown CPU"
 
     @staticmethod
+    def _get_gpu():
+        """Détecte le(s) GPU via PowerShell sur Windows."""
+        try:
+            if platform.system() == "Windows":
+                import subprocess
+                out = subprocess.check_output(
+                    ["powershell", "-NoProfile", "-Command",
+                     "(Get-CimInstance Win32_VideoController | Where-Object {$_.Name -notlike '*Basic*' -and $_.Name -notlike '*Remote*'} | Select-Object -First 1).Name"],
+                    shell=False, stderr=subprocess.DEVNULL
+                ).decode().strip()
+                return out[:40] if out else "Unknown GPU"
+        except Exception:
+            pass
+        return "Unknown GPU"
+
+    @staticmethod
     def _get_sysinfo():
         uname = platform.uname()
+
+        # OS — détection Windows 11 via build number
         os_name = uname.system + " " + uname.release
         if uname.system == "Windows":
             try:
@@ -733,11 +752,32 @@ class WGMonitor(ctk.CTk):
                 os_name = edition
             except Exception:
                 pass
+
+        # CPU brand — PowerShell sur Windows, platform sinon
+        cpu_brand = "Unknown CPU"
+        try:
+            if platform.system() == "Windows":
+                import subprocess
+                out = subprocess.check_output(
+                    ["powershell", "-NoProfile", "-Command",
+                     "(Get-CimInstance Win32_Processor).Name"],
+                    shell=False, stderr=subprocess.DEVNULL
+                ).decode().strip()
+                cpu_brand = out[:38] if out else platform.processor()[:38]
+            else:
+                cpu_brand = platform.processor()[:38] or "Unknown CPU"
+        except Exception:
+            cpu_brand = platform.processor()[:38] or "Unknown CPU"
+
+        # GPU — PowerShell
+        gpu = WGMonitor._get_gpu()
+
         return {
-            "OS":      os_name,
-            "Machine": uname.machine,
-            "Cores":   f"{psutil.cpu_count(logical=False)}P / {psutil.cpu_count(logical=True)}L",
-            "Python":  platform.python_version(),
+            "OS":    os_name,
+            "CPU":   cpu_brand,
+            "GPU":   gpu,
+            "Cores": f"{psutil.cpu_count(logical=False)}P / {psutil.cpu_count(logical=True)}L",
+            "Python": platform.python_version(),
         }
 
 
